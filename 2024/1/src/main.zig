@@ -27,22 +27,29 @@ pub fn main() !void {
     sort(&arr2, 0, arr2.len - 1);
 
     var diff: u32 = 0;
-
+    var similarityScore: u32 = 0;
     for (0..index) |i| {
-        const str1 = try std.fmt.bufPrint(&buf, "{}", .{arr1[i]});
-        const str2 = try std.fmt.bufPrint(&buf, "{}", .{arr2[i]});
-
-        std.debug.print("{s} {s}\n", .{ str1, str2 });
         if (arr1[i] > arr2[i]) {
             diff += arr1[i] - arr2[i];
         } else {
             diff += arr2[i] - arr1[i];
         }
+
+        var count: u32 = 0;
+        for (0..index) |j| {
+            if (arr1[i] == arr2[j]) {
+                const str = try std.fmt.bufPrint(&buf, "{}", .{arr1[i]});
+                std.debug.print("Sum of differences: {s}\n", .{str});
+
+                count += 1;
+            }
+        }
+
+        similarityScore += arr1[i] * count;
     }
 
     const str = try std.fmt.bufPrint(&buf, "{}", .{diff});
-
-    std.debug.print("{s}\n", .{str});
+    std.debug.print("Sum of differences: {s}\n", .{str});
 }
 
 pub fn sort(array: []u32, low: usize, high: usize) void {
