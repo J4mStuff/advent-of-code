@@ -39,7 +39,7 @@ pub fn main() !void {
         for (0..index) |j| {
             if (arr1[i] == arr2[j]) {
                 const str = try std.fmt.bufPrint(&buf, "{}", .{arr1[i]});
-                std.debug.print("Sum of differences: {s}\n", .{str});
+                std.debug.print("{s}\n", .{str});
 
                 count += 1;
             }
@@ -48,8 +48,11 @@ pub fn main() !void {
         similarityScore += arr1[i] * count;
     }
 
-    const str = try std.fmt.bufPrint(&buf, "{}", .{diff});
+    var str = try std.fmt.bufPrint(&buf, "{}", .{diff});
     std.debug.print("Sum of differences: {s}\n", .{str});
+
+    str = try std.fmt.bufPrint(&buf, "{}", .{similarityScore});
+    std.debug.print("Similarity score: {s}\n", .{str});
 }
 
 pub fn sort(array: []u32, low: usize, high: usize) void {
