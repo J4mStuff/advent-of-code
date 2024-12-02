@@ -1,6 +1,7 @@
 const std = @import("std");
 const print = std.debug.print;
 const expect = std.testing.expect;
+const ArrayList = std.ArrayList;
 
 const Errors = error{ ReportInvalid, SingleValueNotExpected };
 
@@ -25,54 +26,58 @@ pub fn run() !void {
 
 fn parseLine(line: []const u8) !bool {
     var it = std.mem.splitSequence(u8, line, " ");
-    var array: [10]u32 = undefined;
+    const allocator = std.heap.page_allocator;
+    var itemList = ArrayList(u32).init(allocator);
+    defer itemList.deinit();
+
     var index: usize = 0;
 
     while (it.next()) |item| {
-        array[index] = try std.fmt.parseInt(u32, item, 10);
+        itemList.append(try std.fmt.parseInt(u32, item, 10));
         index += 1;
     }
 
-    const reportIsUp = array[0] < array[1];
+    const reportIsUp = itemList[0] < itemList[1];
 
-    var valid = try iterate(&array, index, reportIsUp, false);
+    const badIndex = try iterate(&itemList, index, reportIsUp, false);
 
-    if (!valid) {
-        print("First iteration invalid\n", .{});
-        valid = try iterate(&array, index, !reportIsUp, true);
+    if (badIndex == 0) {
+        return 1;
     }
 
-    print("\n", .{});
+    var list2 = ArrayList(u32);
+    list2.appendSlice(itemList[0 .. badIndex - 1]);
+    list2.appendSlice(itemList[badIndex..index]);
 
-    return valid;
+    const attempt2 = try iterate(&list2, index, reportIsUp, false);
+
+    if (attempt2 == 0) {
+        return 1;
+    }
+
+    var list3 = ArrayList(u32);
+    list3.appendSlice(itemList[0..badIndex]);
+    list3.appendSlice(itemList[badIndex + 1 .. index]);
+
+    const attempt3 = try iterate(&list3, index, reportIsUp, false);
+
+    if (attempt3 == 0) {
+        return 1;
+    }
 }
 
-fn iterate(array: []u32, index: usize, reportIsUp: bool, sensitive: bool) !bool {
-    var hadBadReport = sensitive;
-    var i: usize = 0;
-    while (i < index - 1) {
-        i += 1;
-        const resultOk = try compareReports(array[i - 1], array[i], reportIsUp);
+fn iterate(array: []u32, index: usize, reportIsUp: bool) !usize {
+    for (0..index - 1) |i| {
+        const resultOk = try compareReports(array[i], array[i + 1], reportIsUp);
         if (!resultOk) {
-            if (hadBadReport) {
-                print("BAD - {any} {} {} {}\n", .{ array[0..index], array[i - 1], array[i], reportIsUp });
-                return false;
-            }
-            const retryOk = try compareReports(array[i - 1], array[i + 1], reportIsUp);
-            if (!retryOk) {
-                print("BAD - {any} {} {} {}\n", .{ array[0..index], array[i - 1], array[i + 1], reportIsUp });
-                return false;
-            } else {
-                print("Tolerance - {} {} {}\n", .{ array[i - 1], array[i + 1], reportIsUp });
-                hadBadReport = true;
-                continue;
-            }
+            print("BAD - {any} {} {} {}\n", .{ array[0..index], array[i], array[i + 1], reportIsUp });
+            return i;
         }
         continue;
     }
 
     print("\nOK - {any}\n", .{array[0..index]});
-    return true;
+    return 0;
 }
 
 fn compareReports(previous: u32, current: u32, reportIsUp: bool) !bool {
