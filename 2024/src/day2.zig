@@ -49,7 +49,9 @@ fn parseLine(line: []const u8) !bool {
 
 fn iterate(array: []u32, index: usize, reportIsUp: bool, sensitive: bool) !bool {
     var hadBadReport = sensitive;
-    for (1..index) |i| {
+    var i: usize = 0;
+    while (i < index - 1) {
+        i += 1;
         const resultOk = try compareReports(array[i - 1], array[i], reportIsUp);
         if (!resultOk) {
             if (hadBadReport) {
@@ -89,6 +91,11 @@ fn compareReports(previous: u32, current: u32, reportIsUp: bool) !bool {
 
     //print("{} {} {}\n", .{ previous, current, difference });
     return false;
+}
+
+test "parse test 0" {
+    const result = try parseLine("62 68 70 71 73");
+    try expect(result);
 }
 
 test "parse test 1" {
