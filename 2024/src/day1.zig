@@ -3,8 +3,8 @@ const mem = std.mem;
 
 const Error = error{ColumnEmpty};
 
-pub fn main() !void {
-    var file = try std.fs.cwd().openFile("data", .{});
+pub fn run() !void {
+    var file = try std.fs.cwd().openFile("data/day1_data.txt", .{});
     defer file.close();
 
     var buf_reader = std.io.bufferedReader(file.reader());
