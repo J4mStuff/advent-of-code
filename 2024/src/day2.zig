@@ -76,7 +76,8 @@ fn parseLine(line: []const u8) !bool {
     return false;
 }
 
-//OUG OUG MONKE BRAIN RETURN ERROR WHEN NO ERROR
+//OUG OUG
+//MONKE BRAIN RETURN ERROR WHEN NO ERROR
 //RETURN NO ERROR WHEN ERROR BECAUSE EASY HANDLE
 //OUG OUG OUG
 fn iterate(array: []u32, index: usize, reportIsUp: bool) Error!usize {
@@ -86,6 +87,7 @@ fn iterate(array: []u32, index: usize, reportIsUp: bool) Error!usize {
             print("BAD - {any} {} {} {}\n", .{ array[0..index], array[i], array[i + 1], reportIsUp });
             return i;
         };
+
         continue;
     }
 
