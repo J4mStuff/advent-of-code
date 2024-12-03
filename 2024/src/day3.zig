@@ -12,15 +12,26 @@ pub fn run() !void {
 fn parse_data() !void {
     const result = try std.process.Child.run(.{
         .allocator = std.heap.page_allocator,
-        .argv = &[_][]const u8{ "grep", "-oE", "mul\\([0-9]+,[0-9]+\\)", "/home/n3kk/code/advent-of-code/2024/data/day3_data.txt" },
+        .argv = &[_][]const u8{ "grep", "-oE", "do\\(\\)|don't\\(\\)|mul\\([0-9]+,[0-9]+\\)", "/home/n3kk/code/advent-of-code/2024/data/day3_data.txt" },
     });
 
     var it = std.mem.splitSequence(u8, result.stdout, "\n");
 
     var multiplicationResult: u32 = 0;
 
+    var do: bool = true;
+
     while (it.next()) |line| {
         if (line.len < 1) continue;
+        if (std.mem.eql(u8, line, "do()")) {
+            print("SWAP true: {s}\n", .{line});
+            do = true;
+            continue;
+        } else if (std.mem.eql(u8, line, "don't()")) {
+            print("SWAP false: {s}\n", .{line});
+            do = false;
+            continue;
+        }
         const sliceWithNumbers = line[4 .. line.len - 1];
         var splitSequence = std.mem.splitSequence(u8, sliceWithNumbers, ",");
 
@@ -35,8 +46,10 @@ fn parse_data() !void {
         const n1: u32 = try std.fmt.parseInt(u32, first, 10);
         const n2: u32 = try std.fmt.parseInt(u32, second, 10);
 
-        print("Multi: {} * {}\n", .{ n1, n2 });
-        multiplicationResult += n1 * n2;
+        //        print("Do={s}: {} * {}\n", .{ do, n1, n2 });
+        if (do) {
+            multiplicationResult += n1 * n2;
+        }
     }
 
     print("Multiplication Result - {}\n", .{multiplicationResult});
