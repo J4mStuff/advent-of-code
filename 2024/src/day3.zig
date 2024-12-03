@@ -44,7 +44,6 @@ fn parse_data() !void {
         const n1: u32 = try std.fmt.parseInt(u32, first, 10);
         const n2: u32 = try std.fmt.parseInt(u32, second, 10);
 
-        //        print("Do={s}: {} * {}\n", .{ do, n1, n2 });
         if (do) {
             multiplicationResult += n1 * n2;
         }
