@@ -24,11 +24,9 @@ fn parse_data() !void {
     while (it.next()) |line| {
         if (line.len < 1) continue;
         if (std.mem.eql(u8, line, "do()")) {
-            print("SWAP true: {s}\n", .{line});
             do = true;
             continue;
         } else if (std.mem.eql(u8, line, "don't()")) {
-            print("SWAP false: {s}\n", .{line});
             do = false;
             continue;
         }
