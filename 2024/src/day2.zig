@@ -82,11 +82,10 @@ fn parseLine(line: []const u8) !bool {
 fn iterate(array: []u32, index: usize, reportIsUp: bool) Error!usize {
     print("Iterating - {any} - {} - {}\n", .{ array, index, reportIsUp });
     for (0..index - 1) |i| {
-        const resultOk = try compareReports(array[i], array[i + 1], reportIsUp);
-        if (!resultOk) {
+        try compareReports(array[i], array[i + 1], reportIsUp) catch {
             print("BAD - {any} {} {} {}\n", .{ array[0..index], array[i], array[i + 1], reportIsUp });
             return i;
-        }
+        };
         continue;
     }
 
@@ -94,7 +93,7 @@ fn iterate(array: []u32, index: usize, reportIsUp: bool) Error!usize {
     return Error.IterationOk;
 }
 
-fn compareReports(current: u32, next: u32, reportIsUp: bool) !bool {
+fn compareReports(current: u32, next: u32, reportIsUp: bool) Error!void {
     var difference: u32 = 0;
     const goesUp = next > current;
 
@@ -105,16 +104,23 @@ fn compareReports(current: u32, next: u32, reportIsUp: bool) !bool {
     }
 
     if (difference > 0 and difference < 4) {
-        return true;
+        return;
     }
 
     print("P-{} C-{} D-{}\n", .{ current, next, difference });
-    return false;
+    return Error.ReportInvalid;
 }
 
 test "parse test 0" {
     print("\n\nNew test run:\n", .{});
     const result = try parseLine("62 68 70 71 73");
+    print("Result {}\n", .{result});
+    try expect(result);
+}
+
+test "parse test #-1" {
+    print("\n\nNew test run:\n", .{});
+    const result = try parseLine("57 60 62 64 63 64 65");
     print("Result {}\n", .{result});
     try expect(result);
 }
