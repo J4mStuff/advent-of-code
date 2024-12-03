@@ -3,7 +3,7 @@ const print = std.debug.print;
 const expect = std.testing.expect;
 const ArrayList = std.ArrayList;
 
-const Errors = error{ ReportInvalid, SingleValueNotExpected };
+const Error = error{ ReportInvalid, SingleValueNotExpected, IterationOk };
 
 pub fn run() !void {
     var file = try std.fs.cwd().openFile("data/day2_data.txt", .{});
@@ -25,6 +25,8 @@ pub fn run() !void {
 }
 
 fn parseLine(line: []const u8) !bool {
+    print("\nLine - {s}\n", .{line});
+
     var it = std.mem.splitSequence(u8, line, " ");
     const allocator = std.heap.page_allocator;
     var itemList = ArrayList(u32).init(allocator);
@@ -33,40 +35,52 @@ fn parseLine(line: []const u8) !bool {
     var index: usize = 0;
 
     while (it.next()) |item| {
-        itemList.append(try std.fmt.parseInt(u32, item, 10));
+        const itemU32 = try std.fmt.parseInt(u32, item, 10);
+
+        try itemList.append(itemU32);
         index += 1;
     }
 
-    const reportIsUp = itemList[0] < itemList[1];
+    var reportIsUp = itemList.items[0] < itemList.items[1];
 
-    const badIndex = try iterate(&itemList, index, reportIsUp, false);
+    const badIndex = iterate(itemList.items, index, reportIsUp) catch {
+        return true;
+    };
 
-    if (badIndex == 0) {
-        return 1;
-    }
+    //Failed comparing i vs i+1 so one of them is an issue
+    //First try removing i from list
+    print("Attempt #2 - bad index {}\n", .{badIndex});
+    var list2 = ArrayList(u32).init(allocator);
+    defer list2.deinit();
+    try list2.appendSlice(itemList.items[0..badIndex]);
+    try list2.appendSlice(itemList.items[badIndex + 1 ..]);
+    reportIsUp = list2.items[0] < list2.items[1];
 
-    var list2 = ArrayList(u32);
-    list2.appendSlice(itemList[0 .. badIndex - 1]);
-    list2.appendSlice(itemList[badIndex..index]);
+    _ = iterate(list2.items, index - 1, reportIsUp) catch {
+        return true;
+    };
 
-    const attempt2 = try iterate(&list2, index, reportIsUp, false);
+    //If the above didn't work then try with i+1 removed
+    print("Attempt #3 - bad index {}\n", .{badIndex + 1});
+    var list3 = ArrayList(u32).init(allocator);
+    defer list3.deinit();
+    try list3.appendSlice(itemList.items[0 .. badIndex + 1]);
+    try list3.appendSlice(itemList.items[badIndex + 2 ..]);
+    reportIsUp = list3.items[0] < list3.items[1];
 
-    if (attempt2 == 0) {
-        return 1;
-    }
+    _ = iterate(list3.items, index - 1, reportIsUp) catch {
+        return true;
+    };
 
-    var list3 = ArrayList(u32);
-    list3.appendSlice(itemList[0..badIndex]);
-    list3.appendSlice(itemList[badIndex + 1 .. index]);
-
-    const attempt3 = try iterate(&list3, index, reportIsUp, false);
-
-    if (attempt3 == 0) {
-        return 1;
-    }
+    //If either of those didn't work there's probably another issue, so it's not valid
+    return false;
 }
 
-fn iterate(array: []u32, index: usize, reportIsUp: bool) !usize {
+//OUG OUG MONKE BRAIN RETURN ERROR WHEN NO ERROR
+//RETURN NO ERROR WHEN ERROR BECAUSE EASY HANDLE
+//OUG OUG OUG
+fn iterate(array: []u32, index: usize, reportIsUp: bool) Error!usize {
+    print("Iterating - {any} - {} - {}\n", .{ array, index, reportIsUp });
     for (0..index - 1) |i| {
         const resultOk = try compareReports(array[i], array[i + 1], reportIsUp);
         if (!resultOk) {
@@ -76,94 +90,119 @@ fn iterate(array: []u32, index: usize, reportIsUp: bool) !usize {
         continue;
     }
 
-    print("\nOK - {any}\n", .{array[0..index]});
-    return 0;
+    print("OK - {any}\n", .{array[0..index]});
+    return Error.IterationOk;
 }
 
-fn compareReports(previous: u32, current: u32, reportIsUp: bool) !bool {
+fn compareReports(current: u32, next: u32, reportIsUp: bool) !bool {
     var difference: u32 = 0;
-    const goesUp = current > previous;
+    const goesUp = next > current;
 
     if (reportIsUp and goesUp) {
-        difference = current - previous;
+        difference = next - current;
     } else if (!reportIsUp and !goesUp) {
-        difference = previous - current;
+        difference = current - next;
     }
 
-    if (difference >= 1 and difference <= 3) {
+    if (difference > 0 and difference < 4) {
         return true;
     }
 
-    //print("{} {} {}\n", .{ previous, current, difference });
+    print("P-{} C-{} D-{}\n", .{ current, next, difference });
     return false;
 }
 
 test "parse test 0" {
+    print("\n\nNew test run:\n", .{});
     const result = try parseLine("62 68 70 71 73");
+    print("Result {}\n", .{result});
     try expect(result);
 }
 
 test "parse test 1" {
+    print("\n\nNew test run:\n", .{});
     const result = try parseLine("7 6 4 2 1");
+    print("Result {}\n", .{result});
     try expect(result);
 }
 
 test "parse test 2" {
+    print("\n\nNew test run:\n", .{});
     const result = try parseLine("1 2 7 8 9");
+    print("Result {}\n", .{result});
     try expect(!result);
 }
 
 test "parse test 3" {
+    print("\n\nNew test run:\n", .{});
     const result = try parseLine("9 7 6 2 1");
+    print("Result {}\n", .{result});
     try expect(!result);
 }
 
 test "parse test 4" {
+    print("\n\nNew test run:\n", .{});
     const result = try parseLine("1 3 2 4 5");
+    print("Result {}\n", .{result});
     try expect(result);
 }
 
 test "parse test 5" {
+    print("\n\nNew test run:\n", .{});
     const result = try parseLine("8 6 4 4 1");
+    print("Result {}\n", .{result});
     try expect(result);
 }
 
 test "parse test 6" {
+    print("\n\nNew test run:\n", .{});
     const result = try parseLine("1 3 6 7 9");
+    print("Result {}\n", .{result});
     try expect(result);
 }
 
 test "parse bad" {
+    print("\n\nNew test run:\n", .{});
     const result = try parseLine("1 1 1 1 1");
+    print("Result {}\n", .{result});
     try expect(!result);
 }
 
 test "parse good" {
+    print("\n\nNew test run:\n", .{});
     const result = try parseLine("1 2 3 4 5");
+    print("Result {}\n", .{result});
     try expect(result);
 }
 
 test "iterate good" {
+    print("\n\nNew test run:\n", .{});
     var array: [5]u32 = .{ 7, 6, 4, 2, 1 };
     const index = 5;
     const resportIsUp = false;
 
-    const result = try iterate(&array, index, resportIsUp, false);
-    try expect(result);
+    _ = iterate(&array, index, resportIsUp) catch |err| {
+        print("Error expected {}", .{err});
+        try expect(err == Error.IterationOk);
+    };
 }
 
 test "iterate worst" {
+    print("\n\nNew test run:\n", .{});
     var array: [5]u32 = .{ 80, 81, 76, 73, 72 };
     const index = 5;
     const resportIsUp = false;
 
-    const result = try iterate(&array, index, resportIsUp, false);
-    try expect(!result);
+    const result = try iterate(&array, index, resportIsUp);
+    print("Result {}\n", .{result});
+    try expect(result == 0);
 }
 
 test "compare reports" {
+    print("\n\nNew test run:\n", .{});
     var result = try compareReports(10, 10, false);
     try expect(!result);
     result = try compareReports(10, 10, true);
+    print("Result {}\n", .{result});
     try expect(!result);
 }
